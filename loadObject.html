@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>_loadObject.html</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            position: absolute;
+            top: 0px; width: 100%;
+            color: #000;
+            padding: 5px;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            z-index:100;
+        }
+        #ctrl {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 200px;
+            color: burlywood;
+            padding: 5px;
+            font-family: Monospace;
+            font-size: 13px;
+            z-index:100;
+        }
+        a { color:red } 
+    </style>
+</head>
+
+<body>
+    <div id="info">
+        <a target="_blank" href="http://threejs.org">three.js</a>
+        - Web3D annotations; Press "F" to get a mouse-picking point; Press "L" to make a label;
+        <br>
+        <input id="animation" type="button" value="Reload" onclick="animateCamera(true)">
+        <br>
+        <form id="frm1" action="insert.php" method="post">
+        x_coordinate: <input type="text" name="x_coordinate" value="0.0" readonly>
+        y_coordinate: <input type="text" name="y_coordinate" value="0.0" readonly>
+        z_coordinate: <input type="text" name="z_coordinate" value="0.0" readonly><br>
+        text_x <input type="text" name="text_x" value="0.0" readonly>
+        text_y <input type="text" name="text_y" value="0.0" readonly>
+        text_z <input type="text" name="text_z" value="0.0" readonly><br>
+        modelURL: <input type="text" name="modelURL" value="obj/teeth/teeth4_5.obj">
+        author: <input type="text" name="author" value="Zhengyang">
+        label: <input type="text" name="label" value="none"><br>   
+        <input type="submit" value="Save"><br>
+        </form>
+    </div>
+
+
+    <script src="build/three.min.js"></script>
+    <script src="js/loaders/OBJLoader.js"></script>
+    <script src="js/loaders/MTLLoader.js"></script>
+    <script src="js/loaders/OBJMTLLoader.js"></script>
+
+    <script src="fonts/helvetiker_regular.typeface.js"></script>
+
+    <script src="js/controls/TrackballControls.js"></script>
+
+    <script src="js/Detector.js"></script>
+    <script src="js/libs/stats.min.js"></script>
+
+    <script>
+        var container, stats;
+        var camera, controls, scene, projector, renderer, model;       
+        var form1;
+        var text, parent;
+        var geometry, material, mesh;
+        var mouseX, mouseY;
+        var vector, raycaster, intersects;
+        var x, y, z, vec;
+        var objects = [];
+
+        function animateCamera( toggle ) {
+            if ( toggle ) {
+                location.reload(); 
+            }
+        } 
+
+        init();
+        animate();
+
+        function addStuff() {
+//            var loader = new THREE.OBJLoader();
+//            var filepath = form1[6].value;
+//            //form1[6].value = filepath;
+//            loader.load(filepath, function(object) {
+//                model = object;
+//                scene.add( model );
+//                objects.push( model );
+//            });
+
+            var filepath = form1[6].value;
+            var m = new THREE.MeshBasicMaterial({color: 0x000000});
+            var loader = new THREE.OBJMTLLoader();
+            loader.addEventListener( 'load', function ( event ) {
+                var object = event.content;
+                scene.add( object );
+                objects.push( object );
+            });
+            loader.load( filepath, m); 
+            
+            //x,y,z coordinates
+//            var g1 = new THREE.Geometry();
+//            g1.vertices = [
+//                new THREE.Vector3(0,0,0),
+//                new THREE.Vector3(10,0,0)
+//            ];
+//            var line1 = new THREE.Line(g1, new THREE.LineBasicMaterial({ color : 0xdddddd }));
+//            scene.add(line1);
+//            
+//            var g2 = new THREE.Geometry();
+//            g2.vertices = [
+//                new THREE.Vector3(0,0,0),
+//                new THREE.Vector3(0,10,0)
+//            ];
+//            var line2 = new THREE.Line(g2, new THREE.LineBasicMaterial({ color : 0xdddddd }));
+//            scene.add(line2);
+//            
+//            var g3 = new THREE.Geometry();
+//            g3.vertices = [
+//                new THREE.Vector3(0,0,0),
+//                new THREE.Vector3(0,0,10)
+//            ];
+//            var line3 = new THREE.Line(g3, new THREE.LineBasicMaterial({ color : 0xdddddd }));
+//            scene.add(line3);
+        }
+        
+        function loadObj(url) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/img/originalMeanModel.obj', false);
+            xhr.send(null);
+            var text = xhr.responseText;
+            var lines = text.split("\n");
+            for (i=0; i<19343; i++){
+              lines[i] = lines[i].split(" ");
+            }
+
+        }
+
+        function init() {
+            container = document.createElement('div');
+            document.body.appendChild( container );
+            form1 = document.getElementById("frm1");
+            
+            //camera
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth
+                            / window.innerHeight, 1, 10000);
+            camera.position.z = 20;
+            
+            //renderer
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);          
+            container.appendChild(renderer.domElement);
+            
+            //trackball control
+            controls = new THREE.TrackballControls( camera, container);
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 0.8;
+            controls.noZoom = false;
+            controls.noPan = false;
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+            controls.keys = [ 65, 83, 68 ];
+            controls.addEventListener( 'change', render ); 
+            
+
+            // scene
+            scene = new THREE.Scene();
+            addStuff();
+            
+            projector = new THREE.Projector();
+            
+            //light
+            var ambient = new THREE.AmbientLight(0x101030);
+            scene.add(ambient);
+            
+//            var light = new THREE.DirectionalLight( 0xebf3ff, 1.6 );
+//            light.position.set( 0, 140, 500 ).multiplyScalar( 1.1 );
+//            scene.add( light );
+//            
+//            var light = new THREE.DirectionalLight( 0x497f13, 1 );
+//            light.position.set( 0, -1, 0 );
+//            scene.add( light ); 
+
+            var pointLight = new THREE.PointLight(0x777777);
+            pointLight.position.set(100, 100, 100);
+            scene.add(pointLight);
+            
+            var pointLight2 = new THREE.PointLight(0x777777);
+            pointLight2.position.set(100, -100, 100);
+            scene.add(pointLight2);
+            
+            //billboard
+
+            
+            //status
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '850px';
+            stats.domElement.style.zIndex = 100;
+            container.appendChild( stats.domElement ); 
+            
+            //handle mouse action
+            //document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+            document.addEventListener("keydown", onDocumentKeyDown, false);
+            document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+            //
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            controls.handleResize();
+        }
+        
+         function onDocumentMouseMove( event ) {
+            mouseX = (event.clientX / window.innerWidth)*2-1;
+            mouseY = -(event.clientY /window.innerHeight)*2+1;
+         }
+        
+        function onDocumentMouseDown( event ){
+            //event.preventDefault();
+        }
+        
+        function onDocumentKeyDown(event){
+            //event.preventDefault();
+            // Get the key code of the pressed key
+            var keyCode = event.which;
+            // 'F' pressed
+            if(keyCode == 70){
+                console.log("F clicked!");
+                vector = new THREE.Vector3( mouseX, mouseY, 0.5 );
+                projector.unprojectVector( vector, camera );
+                raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+                intersects = raycaster.intersectObjects( objects, true );
+
+                if ( intersects.length > 0 ) {
+                    //get intersection position and face normal
+                    x = intersects[0].point.x;
+                    y = intersects[0].point.y;
+                    z = intersects[0].point.z;
+                    form1[0].value = x;
+                    form1[1].value = y;
+                    form1[2].value = z;
+                    vec = intersects[0].face.normal.clone();
+                    form1[3].value = x + vec.x;
+                    form1[4].value = y + vec.y;
+                    form1[5].value = z + vec.z;
+                    console.log(vec.x, vec.y, vec.z);
+                }
+            }
+            // 'L' pressed
+            else if(keyCode == 76){
+                console.log("L clicked!");                  
+                //draw a line
+                var g = new THREE.Geometry();
+                g.vertices = [
+                    new THREE.Vector3(x,y,z),
+                    new THREE.Vector3(x+vec.x,y+vec.y,z+vec.z)
+                ];
+                var line = new THREE.Line(g, new THREE.LineBasicMaterial({ color : 0xff0000 }));
+                scene.add(line);
+
+                //add text from label
+                var theText = form1[8].value;
+                var text3d = new THREE.TextGeometry( theText, {
+                    size: 0.3,
+                    height: 0.05,
+                    curveSegments: 2,
+                    font: "helvetiker"
+                });
+                text3d.computeBoundingBox();
+                var centerOffset = -0.5 * ( text3d.boundingBox.max.x - text3d.boundingBox.min.x );
+                var textMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff, overdraw: true } );
+                text = new THREE.Mesh( text3d, textMaterial );
+                text.position.x = x+vec.x;
+                text.position.y = y+vec.y;
+                text.position.z = z+vec.z;
+                text.rotation.x = - vec.y/vec.z;
+                text.rotation.y = vec.x/vec.z;
+                text.rotation.z = vec.y/vec.x;
+                parent = new THREE.Object3D();
+                parent.add( text );
+                scene.add( parent );
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+            controls.update();
+            stats.update();
+        }
+
+        function render() {
+            renderer.render( scene, camera );
+        }
+
+
+    </script>
+
+</body>
+</html>
