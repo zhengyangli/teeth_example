@@ -49,8 +49,7 @@ while($row = mysqli_fetch_array($result))
   }
 echo "</table>";
 mysqli_close($con);
-
-echo "<a href= 'loadObject.html' target='_blank'>
-Go Back>>
-</a>";
+echo "<br>";
 ?>
+
+<a href="javascript:window.close();">close window>></a>

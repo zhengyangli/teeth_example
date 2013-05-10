@@ -43,7 +43,8 @@
         <br>
         <input id="animation" type="button" value="Reload" onclick="animateCamera(true)">
         <br>
-        <form id="frm1" action="insert.php" method="post">
+
+        <form id="frm1" target="_blank" action="insert.php" method="post">
         x_coordinate: <input type="text" name="x_coordinate" value="0.0" readonly>
         y_coordinate: <input type="text" name="y_coordinate" value="0.0" readonly>
         z_coordinate: <input type="text" name="z_coordinate" value="0.0" readonly><br>
@@ -54,6 +55,13 @@
         author: <input type="text" name="author" value="Zhengyang">
         label: <input type="text" name="label" value="none"><br>   
         <input type="submit" value="Save"><br>
+        </form>
+        
+        <form id="frm2" target="_blank" action="upload_file.php" method="post"
+        enctype="multipart/form-data">
+        <label for="file">Filename:</label>
+        <input type="file" name="file" id="file"><br>
+        <input type="submit" name="submit" value="Upload" onclick ="uploadFile(true)">
         </form>
     </div>
 
@@ -73,17 +81,25 @@
     <script>
         var container, stats;
         var camera, controls, scene, projector, renderer, model;       
-        var form1;
+        var form1, form2;
         var text, parent;
         var geometry, material, mesh;
         var mouseX, mouseY;
         var vector, raycaster, intersects;
         var x, y, z, vec;
         var objects = [];
-
+        
+        //click Reload
         function animateCamera( toggle ) {
             if ( toggle ) {
                 location.reload(); 
+            }
+        }
+        
+        //click upload
+        function uploadFile( toggle ) {
+            if ( toggle ) {
+                form1[6].value = "obj/upload/" + form2[0].value;
             }
         } 
 
@@ -135,23 +151,12 @@
 //            var line3 = new THREE.Line(g3, new THREE.LineBasicMaterial({ color : 0xdddddd }));
 //            scene.add(line3);
         }
-        
-        function loadObj(url) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/img/originalMeanModel.obj', false);
-            xhr.send(null);
-            var text = xhr.responseText;
-            var lines = text.split("\n");
-            for (i=0; i<19343; i++){
-              lines[i] = lines[i].split(" ");
-            }
-
-        }
 
         function init() {
             container = document.createElement('div');
             document.body.appendChild( container );
             form1 = document.getElementById("frm1");
+            form2 = document.getElementById("frm2");
             
             //camera
             camera = new THREE.PerspectiveCamera(70, window.innerWidth
